@@ -5,9 +5,11 @@ package io.github.gianpamx.learning.rxjava
 
 import io.reactivex.Observable
 import org.junit.Test
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
 import kotlin.concurrent.thread
+
 
 class LearningTests {
     @Test
@@ -179,5 +181,55 @@ class LearningTests {
 
         observable.connect()
         Thread.sleep(11)
+    }
+
+    @Test
+    fun `Ambiguous Observable`() {
+        val source1 = Observable.interval(1, SECONDS)
+                .take(2)
+                .map { l -> l + 1 } // emit elapsed seconds
+                .map { l -> "Source1: $l seconds" }
+
+        val source2 = Observable.interval(300, TimeUnit.MILLISECONDS)
+                .map { l -> (l + 1) * 300 } // emit elapsed milliseconds
+                .map { l -> "Source2: $l milliseconds" }
+
+        Observable.amb(listOf(source1, source2))
+                .subscribe { i -> println("RECEIVED: $i") }
+
+
+        Thread.sleep(5_000)
+    }
+
+    @Test
+    fun `Group by length`() {
+        Observable.just("Alpha", "Beta", "Gamma", "Delta", "Epsilon")
+                .groupBy { it.length }
+                .flatMapSingle {
+                    it.toList()
+                }
+                .subscribe {
+                    println(it)
+                }
+    }
+
+    @Test
+    fun `Ref Count`() {
+        val seconds = Observable.interval(1, SECONDS)
+//                .publish()
+//                .refCount()
+                .share()
+
+        seconds.take(5).subscribe { println("Observer 1: $it") }
+
+        Thread.sleep(3_000)
+
+        seconds.take(2).subscribe { println("Observer 2: $it") }
+
+        Thread.sleep(3_000)
+
+        seconds.subscribe { println("Observer 2: $it") }
+
+        Thread.sleep(3_000)
     }
 }
