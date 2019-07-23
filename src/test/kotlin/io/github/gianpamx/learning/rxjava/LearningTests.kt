@@ -4,6 +4,7 @@
 package io.github.gianpamx.learning.rxjava
 
 import io.reactivex.Observable
+import io.reactivex.subjects.UnicastSubject
 import org.junit.Test
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -231,5 +232,58 @@ class LearningTests {
         seconds.subscribe { println("Observer 2: $it") }
 
         Thread.sleep(3_000)
+    }
+
+    @Test
+    fun `Release Buffer`() {
+        val subject = UnicastSubject.create<String>()
+
+        Observable.interval(300, MILLISECONDS)
+                .map { l -> ((l + 1) * 300).toString() + " milliseconds" }
+                .subscribe(subject)
+
+        Thread.sleep(2_000)
+
+        subject.subscribe { s -> println("Observer 1: $s") }
+
+        Thread.sleep(2_000)
+    }
+
+    @Test
+    fun `Error when subscribing more than once`() {
+        val subject = UnicastSubject.create<String>()
+
+        Observable.interval(300, MILLISECONDS)
+                .map { l -> ((l + 1) * 300).toString() + " milliseconds" }
+                .subscribe(subject)
+
+        Thread.sleep(2_000)
+
+        subject.subscribe { s -> println("Observer 1: $s") }
+        subject.subscribe({ s -> println("Observer 2: $s") }, { println("Expected exception") })
+
+        Thread.sleep(2_000)
+    }
+
+    @Test
+    fun `More than one observer`() {
+        val subject = UnicastSubject.create<String>()
+
+        Observable.interval(300, MILLISECONDS)
+                .map { l -> ((l + 1) * 300).toString() + " milliseconds" }
+                .subscribe(subject)
+
+        Thread.sleep(2_000)
+
+        //multicast to support multiple Observers
+        val multicast = subject.publish().autoConnect()
+
+        //bring in first Observer
+        multicast.subscribe { s -> println("Observer 1: $s") }
+        Thread.sleep(2_000)
+
+        //bring in second Observer
+        multicast.subscribe { s -> println("Observer 2: $s") }
+        Thread.sleep(1_000)
     }
 }
