@@ -4,8 +4,11 @@
 package io.github.gianpamx.learning.rxjava
 
 import io.reactivex.Observable
+import io.reactivex.functions.BiFunction
+import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.UnicastSubject
 import org.junit.Test
+import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
@@ -285,5 +288,26 @@ class LearningTests {
         //bring in second Observer
         multicast.subscribe { s -> println("Observer 2: $s") }
         Thread.sleep(1_000)
+    }
+
+    @Test
+    fun `Concurrent Observables`() {
+        val source1 = Observable.just("Alpha", "Beta", "Gamma", "Delta", "Epsilon")
+                .subscribeOn(Schedulers.computation())
+                .map { intenseCalculation(it) }
+
+        val source2 = Observable.range(1, 6)
+                .subscribeOn(Schedulers.computation())
+                .map { intenseCalculation(it) }
+
+
+        Observable.zip(source1, source2, BiFunction<String, Int, String> { s1, s2 -> "$s1 - $s2" })
+                .blockingSubscribe { println(it) }
+    }
+
+
+    fun <T> intenseCalculation(value: T): T {
+        Thread.sleep(ThreadLocalRandom.current().nextInt(3_000).toLong())
+        return value
     }
 }
