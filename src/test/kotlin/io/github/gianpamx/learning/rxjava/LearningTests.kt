@@ -13,6 +13,7 @@ import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
 import java.util.concurrent.TimeUnit.SECONDS
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.concurrent.thread
 
 
@@ -348,6 +349,25 @@ class LearningTests {
                 .flatMap {
                     Observable.just(it)
                             .subscribeOn(Schedulers.computation())
+                            .map { intenseCalculation(it) }
+                }
+                .subscribe {
+                    println("Received $it ${LocalTime.now()} on thread ${Thread.currentThread().name}")
+                }
+
+        Thread.sleep(20_000)
+    }
+
+    @Test
+    fun `Concurrent Observables for each core`() {
+        val coreCount = Runtime.getRuntime().availableProcessors()
+        val assigner = AtomicInteger(0)
+
+        Observable.range(1, 10)
+                .groupBy { assigner.incrementAndGet() % coreCount }
+                .flatMap { grp ->
+                    grp
+                            .observeOn(Schedulers.io())
                             .map { intenseCalculation(it) }
                 }
                 .subscribe {
