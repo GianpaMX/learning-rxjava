@@ -8,6 +8,7 @@ import io.reactivex.functions.BiFunction
 import io.reactivex.schedulers.Schedulers
 import io.reactivex.subjects.UnicastSubject
 import org.junit.Test
+import java.time.LocalTime
 import java.util.concurrent.ThreadLocalRandom
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -339,5 +340,20 @@ class LearningTests {
         lengths.subscribe { println("Received $it on thread ${Thread.currentThread().name}") }
 
         Thread.sleep(10_000)
+    }
+
+    @Test
+    fun `Concurrent Observables for each emission`() {
+        Observable.range(1, 10)
+                .flatMap {
+                    Observable.just(it)
+                            .subscribeOn(Schedulers.computation())
+                            .map { intenseCalculation(it) }
+                }
+                .subscribe {
+                    println("Received $it ${LocalTime.now()} on thread ${Thread.currentThread().name}")
+                }
+
+        Thread.sleep(20_000)
     }
 }
