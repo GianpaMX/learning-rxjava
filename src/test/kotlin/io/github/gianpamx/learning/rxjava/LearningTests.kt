@@ -376,4 +376,16 @@ class LearningTests {
 
         Thread.sleep(20_000)
     }
+
+    @Test
+    fun `Dispose on different thread`() {
+        val d = Observable.interval(1, SECONDS)
+                .doOnDispose { println("Disposing on thread ${Thread.currentThread().name}") }
+                .unsubscribeOn(Schedulers.io())
+                .subscribe { println("Received $it") }
+
+        Thread.sleep(3_000)
+        d.dispose()
+        Thread.sleep(3_000)
+    }
 }
