@@ -324,4 +324,20 @@ class LearningTests {
 
         Thread.sleep(10_000)
     }
+
+    @Test
+    fun `A thread for all observers`() {
+        val lengths = Observable.just("Alpha", "Beta", "Gamma", "Delta", "Epsilon")
+                .subscribeOn(Schedulers.computation())
+                .map { intenseCalculation(it) }
+                .map { it.length }
+                .publish()
+                .autoConnect(2)
+
+        lengths.subscribe { println("Received $it on thread ${Thread.currentThread().name}") }
+
+        lengths.subscribe { println("Received $it on thread ${Thread.currentThread().name}") }
+
+        Thread.sleep(10_000)
+    }
 }
