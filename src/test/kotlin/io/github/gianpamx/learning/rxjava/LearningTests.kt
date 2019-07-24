@@ -388,4 +388,21 @@ class LearningTests {
         d.dispose()
         Thread.sleep(3_000)
     }
+
+    @Test
+    fun `Fixed-size buffering`() {
+        Observable.range(1, 50)
+                .buffer(8)
+                .subscribe { println(it) }
+    }
+
+    @Test
+    fun `Fixed-size windowing`() {
+        Observable.range(1, 50)
+                .window(8)
+                .flatMapSingle {
+                    it.reduce("") { acc, next -> if (acc.isEmpty()) next.toString() else "$acc, $next" }
+                }
+                .subscribe { println(it) }
+    }
 }
